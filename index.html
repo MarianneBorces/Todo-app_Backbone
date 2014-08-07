@@ -1,0 +1,141 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<title>TODO APP</title>
+		<link rel="stylesheet" href="./bower_components/bootstrap/dist/css/bootstrap.css">
+	</head>
+	<body>
+		<div class="container">
+			
+		</div>
+	</body>
+	<script type="text/javascript" src="./bower_components/jquery/dist/jquery.js"></script>
+	<script type="text/javascript" src="./bower_components/underscore/underscore.js"></script>
+	<script type="text/javascript" src="./bower_components/backbone/backbone.js"></script>
+	<script id="todo-list" type="text/template">
+		<div class="row">
+			<h1>Todo App</h1>
+			<table class="table table-hover">
+				<thead>
+					<tr>
+						<th colspan="3">
+							<form class="form-inline">
+								<input type="text" class="form-control" id="task" placeholder="Task">
+								<input type="text" class="form-control" id="time" placeholder="Time">
+								<input type="button" class="form-control btn btn-primary" id="add-task" value="Add">
+							</form>
+						</th>
+					</tr>
+					<tr>
+						<th>Task</th>
+						<th>When</th>
+						<th>Options</th>
+					</tr>
+				</thead>
+				<tbody class="todo-list-container">
+
+				</tbody>
+			</table>
+		</div>
+	</script>
+	<script id="task-template" type="text/template">
+		<td><%= task %></td>
+		<td><%= time %></td>
+		<td>
+			<input type="button" class="btn btn-xs btn-primary" id="update-task" value="Update">
+			<input type="button" class="btn btn-xs btn-danger" id="delete-task" value="Delete">
+		</td>
+	</script>
+	<script id="task-edit-template" type="text/template">
+		<td><input type="text" class="form-control" id="task" value="<%= task %>"></td>
+		<td><input type="text" class="form-control" id="time" value="<%= time %>"></td>
+		<td>
+			<input type="button" class="btn btn-primary" id="save-task" value="Save">
+			<input type="button" class="btn btn-danger" id="cancel-edit" value="Cancel">
+		</td>
+	</script>
+	<script>
+		$( document ).ready( function () {
+
+			var TodoModel = Backbone.Model.extend( {
+
+			} );
+
+			var TodoCollection = Backbone.Collection.extend( {
+				
+			} );
+
+			var TodoView = Backbone.View.extend( {
+				'template' : _.template( $( '#task-template' ).html() ),
+				'editTemplate' : _.template( $( '#task-edit-template' ).html() ),
+				'tagName' : 'tr',
+				'className' : 'table-row',
+				'initialize' : function () {
+					this.listenTo( this.model, 'destroy', this.remove );
+					this.listenTo( this.model, 'change', this.saveRender );
+				},
+				'events' : {
+					'click #delete-task' : 'deleteTask',
+					'click #update-task' : 'updateTask',
+					'click #save-task'	: 'saveTask',
+					'click #cancel-edit' : 'cancelEdit'
+				},
+				'deleteTask' : function () {
+					this.model.destroy();
+				},
+				'updateTask' : function () {
+					this.render( this.editTemplate );
+				},
+				'saveTask' : function () {
+					this.model.set( { 
+						'task' : this.$el.find( '#task' ).val(),
+						'time' : this.$el.find( '#time' ).val(),
+					} );
+				},
+				'cancelEdit' : function () {
+					this.render( this.template );
+				},
+				'saveRender' : function () {
+					this.$el.html( this.template( this.model.toJSON() ) );
+					return this;
+				},
+				'render' : function ( template ) {
+					this.$el.html( template( this.model.toJSON() ) );
+					return this;
+				},
+			} );
+
+			var TodoAppView = Backbone.View.extend( {
+				'el' : '.container',
+				'template' : _.template( $( '#todo-list' ).html() ),
+				'collection' : new TodoCollection(),
+				'initialize' : function () {
+					this.render();
+					this.listenTo( this.collection, 'add', this.addOne );
+				},
+				'events' : {
+					'click #add-task' : 'addTask'
+				},
+				'render' : function () {
+					this.$el.html( this.template );
+				},
+				'addTask' : function () {
+					this.collection.add( new TodoModel( { 
+						'task' : this.$el.find( '#task' ).val(), 
+						'time' : this.$el.find( '#time' ).val() 
+					} ) );
+				},
+ 				'addOne' : function ( model ) {
+					var newTodo = new TodoView( { model : model } );
+					this.$el.find( '.todo-list-container' ).append( newTodo.render( newTodo.template ).el );
+					this.$el.find( '#task' ).val('');
+					this.$el.find( '#time' ).val('');
+				}
+			} );
+
+			//entry point of the app
+			var TodoApp = new TodoAppView();
+
+		} );
+	</script>
+</html>
